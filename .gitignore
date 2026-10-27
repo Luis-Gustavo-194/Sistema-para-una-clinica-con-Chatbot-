@@ -1,0 +1,6 @@
+# Solo se versionan las carpetas del proyecto; el resto de htdocs (XAMPP) queda fuera
+/*
+!/.gitignore
+!/README.md
+!/sistema_citas/
+!/Clinica/

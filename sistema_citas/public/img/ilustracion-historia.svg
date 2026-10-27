@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 320" role="img" aria-label="Historia clínica digital">
+  <rect width="400" height="320" rx="28" fill="#e2d7ec"/>
+  <circle cx="330" cy="250" r="56" fill="#4a1d6e" opacity=".08"/>
+  <rect x="110" y="36" width="180" height="240" rx="18" fill="#ffffff"/>
+  <rect x="160" y="24" width="80" height="28" rx="10" fill="#4a1d6e"/>
+  <circle cx="200" cy="110" r="34" fill="#efe9f4"/>
+  <path d="M200 92v36M182 110h36" stroke="#4a1d6e" stroke-width="10" stroke-linecap="round"/>
+  <rect x="136" y="166" width="128" height="11" rx="5.5" fill="#cbbcd9"/>
+  <rect x="136" y="188" width="100" height="11" rx="5.5" fill="#cbbcd9"/>
+  <rect x="136" y="210" width="116" height="11" rx="5.5" fill="#cbbcd9"/>
+  <path d="M136 246h30l10-16 14 28 10-12h64" stroke="#f28c28" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

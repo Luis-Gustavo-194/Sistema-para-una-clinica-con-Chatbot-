@@ -1,0 +1,21 @@
+/*
+ * Hoja de estilos principal (la compila Vite).
+ * Las vistas Blade no llevan <style>: usan clases de Tailwind y los componentes
+ * de resources/views/components, basados en Penguin UI (https://www.penguinui.com, MIT).
+ */
+@import 'tailwindcss';
+@import './tema.css';
+@import './componentes.css';
+
+/* Dónde busca Tailwind las clases que se usan */
+@source '../views';
+@source '../js';
+
+/* Alpine: ocultar elementos con x-cloak hasta que Alpine arranque */
+[x-cloak] {
+    display: none !important;
+}
+
+html {
+    scroll-behavior: smooth;
+}

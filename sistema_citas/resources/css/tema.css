@@ -1,0 +1,45 @@
+/*
+ * Tema de la clínica con los nombres de variables de Penguin UI.
+ * Cambiando estos valores se cambia el color de todos los componentes.
+ */
+@theme {
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    /* Superficies y texto */
+    --color-surface: #ffffff;
+    --color-surface-alt: #f6f5f8;
+    --color-on-surface: #4b4659;
+    --color-on-surface-strong: #1f1a2b;
+    --color-outline: #dcd7e3;
+    --color-outline-strong: #4a1d6e;
+
+    /* Marca: morado principal y naranja de acento */
+    --color-primary: #4a1d6e;
+    --color-primary-hover: #3a1457;
+    --color-on-primary: #ffffff;
+    --color-secondary: #e0701b;
+    --color-on-secondary: #ffffff;
+    --color-lavanda: #efe9f4;
+    --color-lavanda-fuerte: #e2d7ec;
+    --color-acento-texto: #c4570f; /* naranja legible sobre fondos claros */
+
+    /* Estados (Penguin UI) */
+    --color-info: #2a78d6;
+    --color-on-info: #ffffff;
+    --color-success: #0f8a3c;
+    --color-on-success: #ffffff;
+    --color-warning: #f59e0b;
+    --color-on-warning: #1f1a2b;
+    --color-danger: #d03b3b;
+    --color-on-danger: #ffffff;
+
+    /* Paneles estilo Orchid: barra lateral oscura */
+    --color-panel: #1d1c22;
+    --color-panel-alt: #2a2930;
+    --color-panel-borde: #34333b;
+    --color-on-panel: #c9c7d1;
+    --color-on-panel-strong: #ffffff;
+    --color-fondo-panel: #eef0f3;
+
+    --radius-radius: 0.5rem;
+}

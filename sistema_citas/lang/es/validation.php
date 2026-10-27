@@ -1,0 +1,63 @@
+<?php
+
+// Mensajes de validación en español (solo las reglas que usa el sistema).
+// Las reglas que no estén aquí usan el mensaje en inglés de Laravel.
+return [
+    'after' => 'El campo :attribute debe ser posterior a :date.',
+    'after_or_equal' => 'El campo :attribute debe ser igual o posterior a :date.',
+    'before' => 'El campo :attribute debe ser anterior a :date.',
+    'between' => [
+        'numeric' => 'El campo :attribute debe estar entre :min y :max.',
+        'string' => 'El campo :attribute debe tener entre :min y :max caracteres.',
+    ],
+    'confirmed' => 'La confirmación de :attribute no coincide.',
+    'current_password' => 'La contraseña actual no es correcta.',
+    'date' => 'El campo :attribute no es una fecha válida.',
+    'date_format' => 'El campo :attribute no tiene el formato correcto.',
+    'different' => 'El campo :attribute debe ser distinto de :other.',
+    'digits' => 'El campo :attribute debe tener :digits dígitos.',
+    'regex' => 'El formato de :attribute no es válido.',
+    'required_with' => 'El campo :attribute es obligatorio cuando se indica :values.',
+    'email' => 'El campo :attribute debe ser un correo electrónico válido.',
+    'exists' => 'El valor seleccionado en :attribute no es válido.',
+    'in' => 'El valor seleccionado en :attribute no es válido.',
+    'integer' => 'El campo :attribute debe ser un número entero.',
+    'max' => [
+        'numeric' => 'El campo :attribute no debe ser mayor que :max.',
+        'string' => 'El campo :attribute no debe superar los :max caracteres.',
+    ],
+    'min' => [
+        'numeric' => 'El campo :attribute debe ser al menos :min.',
+        'string' => 'El campo :attribute debe tener al menos :min caracteres.',
+    ],
+    'required' => 'El campo :attribute es obligatorio.',
+    'string' => 'El campo :attribute debe ser texto.',
+    'unique' => 'El valor ingresado en :attribute ya está registrado.',
+
+    'attributes' => [
+        'apellidos' => 'apellidos',
+        'colegiatura' => 'colegiatura',
+        'contrasena' => 'contraseña',
+        'contrasena_actual' => 'contraseña actual',
+        'diagnostico' => 'diagnóstico',
+        'dni' => 'DNI',
+        'fecha_nacimiento' => 'fecha de nacimiento',
+        'medico' => 'médico',
+        'observaciones' => 'observaciones',
+        'receta_medica' => 'receta médica',
+        'telefono' => 'teléfono',
+        'tratamiento' => 'tratamiento',
+        'turno' => 'horario',
+        'correo' => 'correo',
+        'descripcion' => 'descripción',
+        'especialidad_id' => 'especialidad',
+        'fecha' => 'fecha',
+        'hora_fin' => 'hora de fin',
+        'hora_inicio' => 'hora de inicio',
+        'medico_id' => 'médico',
+        'mensaje' => 'mensaje',
+        'nombre' => 'nombre',
+        'nombres' => 'nombres',
+        'paciente_id' => 'paciente',
+    ],
+];

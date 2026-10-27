@@ -1,0 +1,61 @@
+/*
+ * Estilos que no conviene escribir como utilidades en el HTML.
+ */
+
+/* Curva decorativa naranja junto al título del hero (como un subrayado que baja) */
+.hero-curva {
+    position: relative;
+    display: inline-block;
+    padding-bottom: 0.6rem;
+}
+/* Línea bajo el texto... */
+.hero-curva::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: -1.5rem;
+    bottom: 0;
+    border-top: 3px solid var(--color-secondary);
+}
+/* ...que a la izquierda se curva hacia abajo */
+.hero-curva::before {
+    content: '';
+    position: absolute;
+    left: -2.5rem;
+    top: calc(100% - 3px);
+    width: 2.5rem;
+    height: 3.5rem;
+    border-top: 3px solid var(--color-secondary);
+    border-left: 3px solid var(--color-secondary);
+    border-top-left-radius: 2.5rem;
+}
+
+/* Burbujas del chatbot: conservan los saltos de línea de las respuestas */
+.chat-burbuja {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+/* Carrusel de convenios: desplazamiento horizontal suave sin barra visible */
+.carril-horizontal {
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+.carril-horizontal::-webkit-scrollbar {
+    display: none;
+}
+.carril-horizontal > * {
+    scroll-snap-align: start;
+}
+
+/* Turnos del formulario de citas: el radio está oculto y se estiliza la etiqueta */
+.turno-radio:checked + span {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: 600;
+}
+.turno-radio:focus-visible + span {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
