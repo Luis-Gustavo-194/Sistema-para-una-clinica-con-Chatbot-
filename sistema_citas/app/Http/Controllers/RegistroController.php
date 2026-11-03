@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use App\Models\Auditoria;
 use App\Models\Paciente;
 use App\Models\Rol;
 use App\Models\Usuario;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 // Registro público de pacientes nuevos: crea su usuario (rol Paciente) y su ficha
 class RegistroController extends Controller
@@ -33,6 +34,9 @@ class RegistroController extends Controller
             'fecha_nacimiento' => ['required', 'date_format:Y-m-d', 'before:today', 'after:1900-01-01'],
             'correo' => ['required', 'email', 'max:150', 'unique:usuarios,correo'],
             'contrasena' => ['required', 'string', 'min:8', 'confirmed'],
+            'seguro' => ['required', Rule::in(Paciente::SEGUROS)],
+            // Ley 29733: sin consentimiento no se registran los datos personales
+            'consentimiento' => ['accepted'],
         ]);
 
         [$usuario, $paciente] = DB::transaction(function () use ($datos) {
@@ -50,6 +54,8 @@ class RegistroController extends Controller
                 'apellidos' => $datos['apellidos'],
                 'telefono' => $datos['telefono'] ?? null,
                 'fecha_nacimiento' => $datos['fecha_nacimiento'],
+                'seguro' => $datos['seguro'],
+                'consentimiento_datos_at' => now(),
             ]);
 
             return [$usuario, $paciente];
@@ -57,7 +63,7 @@ class RegistroController extends Controller
 
         Auth::login($usuario);
         $request->session()->regenerate();
-        Auditoria::registrar("Se registró como paciente (DNI {$datos['dni']})", 'pacientes', $paciente->id);
+        Auditoria::registrar("Se registró como paciente (DNI {$datos['dni']}) y aceptó el tratamiento de datos", 'pacientes', $paciente->id);
 
         return redirect()->route('paciente.panel')
             ->with('exito', "¡Bienvenido(a), {$datos['nombres']}! Tu cuenta fue creada. Ya puedes agendar tu primera cita.");

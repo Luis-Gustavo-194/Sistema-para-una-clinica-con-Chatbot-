@@ -8,12 +8,17 @@
 
     @if ($errors->any())
         <x-ui.alerta tono="peligro" class="mt-6">{{ $errors->first() }}</x-ui.alerta>
+    @elseif (session('exito'))
+        <x-ui.alerta tono="exito" class="mt-6">{{ session('exito') }}</x-ui.alerta>
     @endif
 
     <form action="/login" method="POST" class="mt-8 space-y-5">
         @csrf
         <x-ui.input nombre="correo" etiqueta="Correo electrónico" type="email" required autofocus placeholder="ejemplo@correo.com" autocomplete="email" />
         <x-ui.input nombre="contrasena" etiqueta="Contraseña" type="password" required placeholder="••••••••" autocomplete="current-password" />
+        <div class="text-right text-sm">
+            <a href="{{ route('password.request') }}" class="font-medium text-primary underline-offset-4 hover:underline">¿Olvidaste tu contraseña?</a>
+        </div>
         <x-ui.boton type="submit" tamano="lg" class="w-full">Iniciar sesión</x-ui.boton>
     </form>
 

@@ -3,6 +3,7 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         defaultTestSuite="Unit,Feature"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -10,6 +11,11 @@
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
+        </testsuite>
+        <!-- HU12: concurrencia real contra MySQL (base sistema_citas_testing). No corre por defecto;
+             se ejecuta eligiendo la suite Concurrencia (ver README). -->
+        <testsuite name="Concurrencia">
+            <directory>tests/Concurrencia</directory>
         </testsuite>
     </testsuites>
     <source>

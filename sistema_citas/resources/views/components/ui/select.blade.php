@@ -6,7 +6,7 @@
     $error = $errors->first($nombre);
 @endphp
 
-<div class="flex w-full flex-col gap-1.5">
+<div class="flex w-full flex-col gap-1.5" data-campo>
     @if ($etiqueta)
         <label for="{{ $id }}" class="w-fit pl-0.5 text-sm font-semibold text-on-surface-strong">{{ $etiqueta }}</label>
     @endif

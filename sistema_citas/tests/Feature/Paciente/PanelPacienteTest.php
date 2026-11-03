@@ -2,23 +2,27 @@
 
 namespace Tests\Feature\Paciente;
 
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Tests\TestCase;
-use Tests\Concerns\EsquemaClinica;
 use App\Models\Cita;
 use App\Models\Rol;
 use App\Models\Usuario;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Tests\Concerns\EsquemaClinica;
+use Tests\TestCase;
 
 class PanelPacienteTest extends TestCase
 {
     use EsquemaClinica;
 
     private Usuario $usuario;
+
     private int $paciente;
+
     private int $otroPaciente;
+
     private int $especialidad;
+
     private int $medico;
 
     protected function setUp(): void
@@ -68,7 +72,15 @@ class PanelPacienteTest extends TestCase
             ->assertRedirect('/paciente/citas')->assertSessionHas('exito');
 
         $this->assertDatabaseHas('citas', ['paciente_id' => $this->paciente, 'medico_id' => $this->medico, 'fecha' => '2026-10-16', 'hora_inicio' => '08:30:00', 'hora_fin' => '09:00:00', 'estado' => 'Pendiente']);
-        $this->assertDatabaseHas('auditorias', ['usuario_id' => $this->usuario->id, 'tabla_afectada' => 'citas']);
+        // HU11: la reserva queda en la bitácora con su canal de origen
+        $citaId = DB::table('citas')->value('id');
+        $this->assertDatabaseHas('auditorias', [
+            'usuario_id' => $this->usuario->id,
+            'accion' => "Agendó la cita #{$citaId} desde su panel",
+            'tabla_afectada' => 'citas',
+            'registro_id' => $citaId,
+            'canal' => 'web',
+        ]);
     }
 
     public function test_rechaza_turnos_inventados_ocupados_o_de_medico_inactivo(): void

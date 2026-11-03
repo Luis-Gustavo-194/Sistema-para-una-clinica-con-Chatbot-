@@ -157,6 +157,11 @@
                 <p class="text-on-surface">Pronto publicaremos a nuestro staff médico.</p>
             @endforelse
         </div>
+        @if ($medicos->isNotEmpty())
+            <div class="mt-8 text-center">
+                <x-ui.boton :href="route('directorio')" variante="secundario" class="rounded-full">Ver el directorio con horarios de atención <x-icono nombre="flecha-derecha" class="size-4" /></x-ui.boton>
+            </div>
+        @endif
     </section>
 
     {{-- ============ NOSOTROS: CIFRAS ============ --}}

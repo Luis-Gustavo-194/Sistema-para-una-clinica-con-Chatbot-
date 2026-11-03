@@ -30,4 +30,13 @@ return [
         ['nombre' => 'SCTR', 'detalle' => 'Seguro complementario de trabajo de riesgo'],
         ['nombre' => 'Programas preventivos', 'detalle' => 'Chequeos anuales y campañas'],
     ],
+
+    // Horas mínimas de anticipación para que el paciente cancele (web y chatbot). Recepción puede cancelar siempre.
+    'cancelacion_horas_minimas' => (int) env('CITAS_HORAS_MIN_CANCELACION', 24),
+
+    // Enviar al paciente un correo de confirmación al agendar o reprogramar
+    'correo_confirmacion' => (bool) env('CITAS_CORREO_CONFIRMACION', true),
+
+    // Datos que el Administrador puede editar en "Datos de la clínica" (se guardan en la tabla configuraciones)
+    'editables' => ['nombre', 'eslogan', 'ciudad', 'direccion', 'telefonos.celular', 'telefonos.fijo', 'correo', 'horario'],
 ];

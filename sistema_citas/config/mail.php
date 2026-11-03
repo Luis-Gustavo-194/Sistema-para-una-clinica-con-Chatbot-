@@ -115,4 +115,12 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    // Plantilla de los correos (HU04): tema "clinica" en resources/views/vendor/mail/html/themes
+    'markdown' => [
+        'theme' => env('MAIL_MARKDOWN_THEME', 'clinica'),
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];

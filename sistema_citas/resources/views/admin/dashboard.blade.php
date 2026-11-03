@@ -106,7 +106,10 @@
         </section>
 
         <section>
-            <h2 class="mb-3 text-base font-semibold text-on-surface-strong">Actividad reciente</h2>
+            <div class="mb-3 flex items-center justify-between gap-2">
+                <h2 class="text-base font-semibold text-on-surface-strong">Actividad reciente</h2>
+                <a href="{{ route('admin.auditoria.index') }}" class="text-sm font-semibold text-primary hover:underline">Ver toda la auditoría</a>
+            </div>
             <x-ui.tabla>
                 <thead><tr><th>Fecha</th><th>Acción</th><th>Usuario</th></tr></thead>
                 <tbody>

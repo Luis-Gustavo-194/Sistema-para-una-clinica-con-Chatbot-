@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Rol;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Rol;
 
 // Datos de prueba para la BD MySQL sistema_citas_medicas.
 // Ejecutar con: php artisan db:seed --class=DatosPruebaSeeder
@@ -112,6 +112,10 @@ class DatosPruebaSeeder extends Seeder
             }
             // Paciente existente (Luis)
             $pac['70000001'] = DB::table('pacientes')->where('dni', '70000001')->value('id');
+
+            // Recepcionista (el rol 4 lo crea la migración agregar_rol_recepcionista)
+            $this->idOCrear('roles', ['id' => Rol::RECEPCIONISTA], ['nombre' => 'Recepcionista']);
+            $this->usuario('recepcion@clinica.com', Rol::RECEPCIONISTA);
 
             // ==========================================
             // 5. CITAS (fechas relativas a hoy)

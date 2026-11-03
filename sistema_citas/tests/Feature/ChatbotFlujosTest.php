@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\Cita;
+use App\Models\Usuario;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use Tests\TestCase;
 use Tests\Concerns\EsquemaClinica;
-use App\Models\Cita;
-use App\Models\Usuario;
+use Tests\TestCase;
 
 // Flujos completos del chatbot (agendar, cancelar, reprogramar), accesos por rol y login.
 // El motor NLP de Python se simula con Http::fake.
@@ -18,7 +18,9 @@ class ChatbotFlujosTest extends TestCase
     use EsquemaClinica;
 
     private string $intencion = 'saludo';
+
     private array $cookies = []; // cookie de sesión por "navegador"
+
     private string $manana;
 
     protected function setUp(): void
@@ -76,6 +78,7 @@ class ChatbotFlujosTest extends TestCase
         if ($cookie) {
             $this->cookies[$navegador] = $cookie->getValue();
         }
+
         return $res->json();
     }
 
@@ -85,6 +88,7 @@ class ChatbotFlujosTest extends TestCase
         $this->enviar('quiero una cita', $navegador);
         $this->enviar($dni, $navegador);
         $this->enviar('Cardiología', $navegador);
+
         return $this->enviar('1', $navegador); // médico id 1 -> devuelve horarios
     }
 
@@ -95,6 +99,15 @@ class ChatbotFlujosTest extends TestCase
         $r = $this->enviar('1');
         $this->assertStringContainsString('agendada exitosamente', $r['respuesta']);
         $this->assertDatabaseHas('citas', ['paciente_id' => 1, 'medico_id' => 1, 'fecha' => $this->manana, 'hora_inicio' => '10:00:00', 'estado' => 'Pendiente']);
+        // HU11/HU18: sin sesión, el autor es el usuario del paciente identificado por DNI y el canal es el chatbot
+        $citaId = Cita::value('id');
+        $this->assertDatabaseHas('auditorias', [
+            'usuario_id' => 4,
+            'accion' => "Agendó la cita #{$citaId} por el chatbot",
+            'tabla_afectada' => 'citas',
+            'registro_id' => $citaId,
+            'canal' => 'chatbot',
+        ]);
 
         // Otro navegador/paciente: el turno de las 10:00 ya no se ofrece y no se puede forzar
         $r = $this->agendar('22222222', 'B');
@@ -126,8 +139,10 @@ class ChatbotFlujosTest extends TestCase
 
     public function test_cancelar_solo_citas_propias_y_marca_estado(): void
     {
-        $ajena = Cita::create(['paciente_id' => 1, 'medico_id' => 1, 'fecha' => $this->manana, 'hora_inicio' => '10:00:00', 'hora_fin' => '10:30:00', 'estado' => 'Pendiente']);
-        $propia = Cita::create(['paciente_id' => 2, 'medico_id' => 2, 'fecha' => $this->manana, 'hora_inicio' => '11:30:00', 'hora_fin' => '12:00:00', 'estado' => 'Pendiente']);
+        // Con más de 24 h de anticipación (regla de cancelación)
+        $enTresDias = date('Y-m-d', strtotime('+3 days'));
+        $ajena = Cita::create(['paciente_id' => 1, 'medico_id' => 1, 'fecha' => $enTresDias, 'hora_inicio' => '10:00:00', 'hora_fin' => '10:30:00', 'estado' => 'Pendiente']);
+        $propia = Cita::create(['paciente_id' => 2, 'medico_id' => 2, 'fecha' => $enTresDias, 'hora_inicio' => '11:30:00', 'hora_fin' => '12:00:00', 'estado' => 'Pendiente']);
 
         $this->intencion = 'cancelar_cita';
         $this->enviar('cancela mi cita');
@@ -141,6 +156,7 @@ class ChatbotFlujosTest extends TestCase
         $r = $this->enviar((string) $propia->id);
         $this->assertStringContainsString('cancelada exitosamente', $r['respuesta']);
         $this->assertSame('Cancelada', $propia->fresh()->estado); // no se borra
+        $this->assertDatabaseHas('auditorias', ['accion' => "Canceló la cita #{$propia->id} por el chatbot", 'registro_id' => $propia->id, 'canal' => 'chatbot']);
 
         // Una cita cancelada ya no se ofrece
         $this->intencion = 'cancelar_cita';
@@ -169,16 +185,58 @@ class ChatbotFlujosTest extends TestCase
         $this->assertSame(1, $mia->medico_id);
         $this->assertSame('11:30:00', $mia->hora_inicio);
         $this->assertSame(2, Cita::count());
+        $this->assertDatabaseHas('auditorias', ['accion' => "Reprogramó la cita #{$mia->id} por el chatbot", 'registro_id' => $mia->id, 'canal' => 'chatbot']);
     }
 
-    public function test_choque_en_carrera_vuelve_a_ofrecer_horarios(): void
+    public function test_choque_en_carrera_ofrece_horarios_alternativos(): void
     {
         $this->agendar('11111111'); // ofrece 1 y 2
         // Mientras elige, otro paciente toma las 10:00
         Cita::create(['paciente_id' => 2, 'medico_id' => 1, 'fecha' => $this->manana, 'hora_inicio' => '10:00:00', 'hora_fin' => '10:30:00', 'estado' => 'Pendiente']);
         $r = $this->enviar('1');
         $this->assertStringContainsString('No se pudo guardar', $r['respuesta']);
-        $this->assertSame(['11:30 AM'], array_column($r['opciones'], 'texto'));
+        $this->assertStringContainsString('horarios libres más cercanos', $r['respuesta']);
+
+        // Los 3 turnos libres más cercanos a las 10:00 de mañana, aunque sean de otro día
+        $pasado = date('Y-m-d', strtotime('+2 days'));
+        $this->assertSame([
+            date('d/m/Y', strtotime($this->manana)).' · 11:30 AM',
+            date('d/m/Y', strtotime($pasado)).' · 10:00 AM',
+            date('d/m/Y', strtotime($pasado)).' · 11:30 AM',
+        ], array_column($r['opciones'], 'texto'));
+
+        // Elegir una alternativa de otro día reserva esa fecha
+        $r = $this->enviar('2');
+        $this->assertStringContainsString('agendada exitosamente', $r['respuesta']);
+        $this->assertDatabaseHas('citas', ['paciente_id' => 1, 'fecha' => $pasado, 'hora_inicio' => '10:00:00', 'canal' => 'chatbot']);
+    }
+
+    public function test_sin_alternativas_ofrece_otro_medico_de_la_especialidad(): void
+    {
+        DB::table('medicos')->insert(['id' => 3, 'usuario_id' => 3, 'especialidad_id' => 1, 'colegiatura' => 'CMP-3', 'nombres' => 'Eva', 'apellidos' => 'Luna']);
+        $this->agendar('11111111');
+        // El Dr. Ríos se queda sin ningún turno libre en los próximos días
+        DB::table('horarios_medicos')->where('medico_id', 1)->delete();
+        Cita::create(['paciente_id' => 2, 'medico_id' => 1, 'fecha' => $this->manana, 'hora_inicio' => '10:00:00', 'hora_fin' => '10:30:00', 'estado' => 'Pendiente']);
+
+        $r = $this->enviar('1');
+
+        $this->assertStringContainsString('ya no tiene horarios libres', $r['respuesta']);
+        $this->assertSame(['3'], array_column($r['opciones'], 'valor'));
+    }
+
+    public function test_no_cancela_con_menos_de_24_horas(): void
+    {
+        $this->travelTo(now()->startOfDay()->setTime(12, 0));
+        Cita::create(['paciente_id' => 2, 'medico_id' => 2, 'fecha' => date('Y-m-d', strtotime('+1 day')), 'hora_inicio' => '10:00:00', 'hora_fin' => '10:30:00', 'estado' => 'Pendiente']);
+
+        $this->intencion = 'cancelar_cita';
+        $this->enviar('cancela mi cita');
+        $r = $this->enviar('22222222');
+
+        $this->assertStringContainsString('menos de 24 horas', $r['respuesta']);
+        $this->assertArrayNotHasKey('opciones', $r);
+        $this->assertSame(1, Cita::where('estado', 'Pendiente')->count());
     }
 
     public function test_especialidades_desde_bd_desconocida_y_python_apagado(): void
@@ -248,6 +306,8 @@ class ChatbotFlujosTest extends TestCase
 
     public function test_paciente_con_sesion_no_necesita_dni(): void
     {
+        // A las 8:00 la cita de mañana a las 10:00 está a más de 24 h, así que se puede cancelar
+        $this->travelTo(now()->startOfDay()->setTime(8, 0));
         $this->actingAs(Usuario::find(4)); // paciente@x.com = Juan (paciente 1)
 
         $this->intencion = 'agendar_cita';

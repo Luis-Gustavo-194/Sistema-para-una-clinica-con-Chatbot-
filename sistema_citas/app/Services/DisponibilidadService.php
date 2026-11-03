@@ -2,11 +2,11 @@
 
 namespace App\Services;
 
-use Carbon\CarbonInterface;
-use Illuminate\Support\Carbon;
 use App\Models\Cita;
 use App\Models\HorarioMedico;
 use App\Models\Medico;
+use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
 
 // Calcula los turnos libres de un médico a partir de sus horarios (horarios_medicos)
 // y de las citas que ya tiene. Lo usan el chatbot y el panel del paciente.
@@ -30,7 +30,7 @@ class DisponibilidadService
     // Comprueba en el servidor que el turno elegido existe y sigue libre. Devuelve el turno o null.
     public static function esTurnoValido(Medico $medico, string $fecha, string $inicio, ?int $excluirCitaId = null): ?array
     {
-        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
             return null;
         }
         $dia = Carbon::createFromFormat('Y-m-d', $fecha)->startOfDay();
@@ -43,7 +43,30 @@ class DisponibilidadService
                 return $turno;
             }
         }
+
         return null;
+    }
+
+    // Ante un conflicto: los turnos libres más cercanos en el tiempo al que se pidió
+    // [['fecha' => 'Y-m-d', 'inicio' => 'H:i:s', 'fin' => 'H:i:s', 'consultorio' => ...], ...]
+    public static function alternativas(Medico $medico, string $fecha, string $inicio, int $limite = 3, ?int $excluirCitaId = null): array
+    {
+        $pedido = strtotime("{$fecha} {$inicio}");
+        $turnos = [];
+
+        foreach (self::proximosDias($medico, self::DIAS_BUSQUEDA, $excluirCitaId) as $dia => $delDia) {
+            foreach ($delDia as $turno) {
+                $turnos[] = ['fecha' => $dia] + $turno;
+            }
+        }
+
+        usort($turnos, fn ($a, $b) => abs(strtotime("{$a['fecha']} {$a['inicio']}") - $pedido) <=> abs(strtotime("{$b['fecha']} {$b['inicio']}") - $pedido)
+            ?: strcmp($a['fecha'].$a['inicio'], $b['fecha'].$b['inicio']));
+
+        $elegidos = array_slice($turnos, 0, $limite);
+        usort($elegidos, fn ($a, $b) => strcmp($a['fecha'].$a['inicio'], $b['fecha'].$b['inicio']));
+
+        return $elegidos;
     }
 
     public static function tieneHorarios(Medico $medico): bool
@@ -81,7 +104,7 @@ class DisponibilidadService
         $resultado = [];
         for ($dia = $desde->copy()->startOfDay(); $dia->lte($hasta); $dia->addDay()) {
             $bloques = $bloquesPorDia->get($dia->dayOfWeekIso);
-            if (!$bloques) {
+            if (! $bloques) {
                 continue;
             }
 
@@ -97,7 +120,7 @@ class DisponibilidadService
                     $fin = $inicio + $duracion;
                     // Libre si no se cruza con ninguna cita existente
                     $choca = $ocupadas->contains(fn ($o) => $o[0] < $fin && $o[1] > $inicio);
-                    if (!$choca) {
+                    if (! $choca) {
                         $turnos[] = ['inicio' => self::hora($inicio), 'fin' => self::hora($fin), 'consultorio' => $bloque->consultorio];
                     }
                 }
@@ -114,6 +137,7 @@ class DisponibilidadService
     private static function segundos(string $hora): int
     {
         [$h, $m, $s] = array_map('intval', explode(':', $hora)) + [0, 0, 0];
+
         return $h * 3600 + $m * 60 + $s;
     }
 

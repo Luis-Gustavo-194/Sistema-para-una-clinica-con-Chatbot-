@@ -73,6 +73,7 @@
                     <td>
                         <div class="flex flex-wrap gap-1.5">
                             <x-ui.boton :href="route('admin.medicos.edit', $medico)" variante="secundario" tamano="sm"><x-icono nombre="lapiz" class="size-3.5" /> Editar</x-ui.boton>
+                            <x-ui.boton :href="route('admin.medicos.horarios.edit', $medico)" variante="secundario" tamano="sm"><x-icono nombre="reloj" class="size-3.5" /> Horarios</x-ui.boton>
 
                             <form method="POST" action="{{ route('admin.medicos.estado', $medico) }}" data-confirmar="{{ $aviso }}">
                                 @csrf

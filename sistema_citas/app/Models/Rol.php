@@ -10,11 +10,23 @@ class Rol extends Model
 
     // IDs fijos de la tabla roles en MySQL
     const PACIENTE = 1;
+
     const MEDICO = 2;
+
     const ADMINISTRADOR = 3;
 
+    const RECEPCIONISTA = 4;
+
+    // Nombre visible de cada rol (con tilde, a diferencia de la tabla)
+    const NOMBRES = [
+        self::PACIENTE => 'Paciente',
+        self::MEDICO => 'Médico',
+        self::ADMINISTRADOR => 'Administrador',
+        self::RECEPCIONISTA => 'Recepcionista',
+    ];
+
     protected $fillable = [
-        'nombre'
+        'nombre',
     ];
 
     // Relación: Un rol puede tener muchos usuarios

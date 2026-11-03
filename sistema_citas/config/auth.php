@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\Usuario;
 
 return [
 
@@ -64,7 +65,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Usuario::class,
+            'model' => Usuario::class,
         ],
 
         // 'users' => [
@@ -113,5 +114,11 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    // HU01: bloqueo temporal de la cuenta tras N intentos fallidos de inicio de sesión
+    'bloqueo' => [
+        'intentos' => (int) env('LOGIN_MAX_INTENTOS', 5),
+        'minutos' => (int) env('LOGIN_MINUTOS_BLOQUEO', 15),
+    ],
 
 ];

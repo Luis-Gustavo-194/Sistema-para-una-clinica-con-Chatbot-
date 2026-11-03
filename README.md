@@ -51,7 +51,7 @@ mysql -u root -p < sistema_citas/Dump20261026.sql
 
 > **XAMPP / MariaDB:** MariaDB no reconoce la collation `utf8mb4_0900_ai_ci` de MySQL 8. Antes de importar, abre el `.sql` en un editor y reemplaza todas las apariciones de `utf8mb4_0900_ai_ci` por `utf8mb4_unicode_ci`. Luego impórtalo desde phpMyAdmin (*Importar*).
 
-> No ejecutes `php artisan migrate`: el dump ya trae la estructura que usa el sistema.
+> El dump trae la estructura base. Los cambios posteriores (bloqueo de cuentas, rol Recepcionista, seguro y consentimiento del paciente, índices de búsqueda, canal de la bitácora y la tabla de recuperación de contraseñas) se aplican con `php artisan migrate` en el paso 3. Las migraciones solo agregan columnas, índices y tablas: no borran datos.
 
 ### 3. Configurar y levantar Laravel
 
@@ -73,6 +73,26 @@ DB_DATABASE=sistema_citas_medicas
 DB_USERNAME=root
 DB_PASSWORD=tu_contraseña
 ```
+
+Aplica las migraciones sobre la base importada y crea la cuenta de prueba de Recepcionista (el seeder es idempotente: no duplica lo que ya existe):
+
+```bash
+php artisan migrate
+php artisan db:seed --class=DatosPruebaSeeder
+```
+
+Para que el sistema envíe los correos de recuperación de contraseña por Gmail, crea una [contraseña de aplicación](https://myaccount.google.com/apppasswords) en tu cuenta de Google (requiere la verificación en 2 pasos) y complétala en `.env`:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=tu_correo@gmail.com
+MAIL_PASSWORD="xxxx xxxx xxxx xxxx"
+MAIL_FROM_ADDRESS="tu_correo@gmail.com"
+```
+
+Mientras no lo configures, deja `MAIL_MAILER=log`: los correos (con su enlace) se escriben en `storage/logs/laravel.log`. El bloqueo por intentos fallidos se ajusta con `LOGIN_MAX_INTENTOS` (5) y `LOGIN_MINUTOS_BLOQUEO` (15).
 
 Compila los estilos y scripts, y arranca el servidor:
 
@@ -110,6 +130,7 @@ Todas las cuentas del dump usan la contraseña **`Prueba123*`**. Algunas para em
 | Rol | Correo |
 |---|---|
 | Administrador | `admin@clinica.com` |
+| Recepcionista | `recepcion@clinica.com` (la crea `DatosPruebaSeeder`) |
 | Médico | `carlos.perez@clinica.com` |
 | Médico | `ana.torres@clinica.com` |
 | Paciente | `mario.quispe@pacientes.clinica.com` (DNI `70000001`) |
@@ -121,9 +142,53 @@ También puedes crear un paciente nuevo desde **Registrarse** en la página de i
 
 Entra a http://localhost:8000 e inicia sesión. Cada rol ve su propio panel:
 
-- **Paciente:** ve sus próximas citas, agenda una cita nueva eligiendo especialidad, médico y horario disponible, reprograma o cancela citas, consulta su historia clínica y edita su perfil y contraseña.
+- **Paciente:** ve sus próximas citas (con filtro por estado), agenda una cita nueva eligiendo especialidad, médico y horario disponible, reprograma o cancela citas (hasta 24 h antes), consulta su historia clínica y edita su perfil y contraseña. Si otro paciente toma el horario mientras elige, el formulario recarga los horarios libres y le propone los más cercanos.
 - **Médico:** ve su agenda del día y sus citas, cambia el estado de una cita, registra la atención (diagnóstico, indicaciones y receta, que pasan a la historia clínica del paciente) y define sus horarios de atención por día de la semana.
-- **Administrador:** ve un tablero con indicadores (citas, médicos, especialidades) y administra especialidades y médicos (crear, editar, activar o desactivar). Lo que se desactiva deja de ofrecerse en el chatbot.
+- **Recepcionista:** busca pacientes por DNI o por nombres y apellidos (basta con el inicio, por ejemplo "Gonz"), consulta su ficha con sus últimas citas, y registra o edita pacientes con su seguro y el consentimiento de datos. Al registrar un paciente se le envía un correo para que cree su contraseña. Desde la ficha **reserva citas** para el paciente y las **cancela** (incluso con menos de 24 h).
+- **Administrador:** ve un tablero con indicadores (citas, médicos, especialidades) y administra especialidades y médicos (crear, editar, activar o desactivar). Lo que se desactiva deja de ofrecerse en el chatbot. También:
+  - en **Usuarios** asigna el rol de cada cuenta (Paciente, Recepcionista o Administrador) y crea cuentas de personal;
+  - edita los **horarios** de cualquier médico y los **datos de la clínica** (nombre, teléfonos, dirección, horario de atención);
+  - revisa la **Auditoría** con filtros (texto, tabla, canal, fechas), con los intentos de acceso fallidos resaltados;
+  - entra al módulo de recepción.
+
+Cualquier visitante puede consultar el **directorio médico** (`/directorio`): los médicos activos por especialidad con sus días y horas de atención.
+
+**Seguridad y bitácora:**
+
+- Tras 5 intentos fallidos de inicio de sesión, la cuenta se bloquea 15 minutos.
+- Desde el login, **¿Olvidaste tu contraseña?** envía por correo un enlace de un solo uso que vence en 60 minutos.
+- El registro pide aceptar el tratamiento de datos personales (Ley N.° 29733).
+- Cada acción queda en la tabla `auditorias` con su canal (`web` o `chatbot`), incluidos los inicios y cierres de sesión y los intentos fallidos. Los DNI, correos y teléfonos se guardan parcialmente ocultos (por ejemplo `76****10`).
+- **Reservas a prueba de choques:**
+  - web, chatbot y recepción reservan con el mismo servicio (`CitaService`);
+  - el servicio bloquea la fila del médico durante la reserva y reintenta si MySQL detecta un interbloqueo;
+  - además, un índice único sobre una columna generada impide que dos citas vigentes ocupen el mismo turno;
+  - cada cita guarda su canal de origen (`web`, `chatbot` o `recepcion`);
+  - al reservar o reprogramar se envía un correo de confirmación, que se desactiva con `CITAS_CORREO_CONFIRMACION=false`.
+
+### Pruebas de concurrencia y de estrés (HU12)
+
+La suite normal (`php artisan test`) usa SQLite en memoria. Hay además dos pruebas contra MySQL real:
+
+- **Concurrencia:** lanza 20 procesos PHP que reservan a la vez. Usa la base aparte `sistema_citas_testing`, que se crea sola; nunca toca tu base.
+
+  ```bash
+  php artisan test --testsuite=Concurrencia
+  ```
+
+- **Estrés web + chatbot:**
+  - crea un médico y pacientes temporales, simula usuarios simultáneos y muestra los tiempos (p50/p95);
+  - comprueba que no haya dobles reservas y borra lo que creó;
+  - el servidor de PHP de Windows atiende una petición a la vez, así que levanta varios en paralelo desde `public/`;
+  - para la parte del chatbot debe estar corriendo `uvicorn`;
+  - úsalo contra una **copia** de la base: los servidores y el comando deben apuntar a la misma base (`DB_DATABASE`).
+
+  ```bash
+  cd public
+  php -S 127.0.0.1:8101 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php   # repetir con 8102, 8103...
+  cd ..
+  php artisan prueba:estres --usuarios=40 --chat=50 --url=http://127.0.0.1:8101 --url=http://127.0.0.1:8102
+  ```
 
 ### El chatbot
 

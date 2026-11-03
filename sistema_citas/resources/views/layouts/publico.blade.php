@@ -24,7 +24,7 @@
 
             <nav class="hidden items-center gap-7 text-[0.95rem] font-medium text-primary lg:flex" aria-label="Principal">
                 <a href="/#especialidades" class="hover:text-acento-texto">Especialidades</a>
-                <a href="/#staff" class="hover:text-acento-texto">Staff médico</a>
+                <a href="{{ route('directorio') }}" class="hover:text-acento-texto">Directorio médico</a>
                 <a href="/#nosotros" class="hover:text-acento-texto">Nosotros</a>
                 <a href="/#contacto" class="hover:text-acento-texto">Contacto</a>
 
@@ -64,7 +64,7 @@
         <nav x-cloak x-show="menuMovil" x-collapse class="border-t border-outline lg:hidden" aria-label="Principal móvil">
             <div class="flex flex-col gap-1 px-6 py-4 font-medium text-primary">
                 <a href="/#especialidades" x-on:click="menuMovil = false" class="py-2">Especialidades</a>
-                <a href="/#staff" x-on:click="menuMovil = false" class="py-2">Staff médico</a>
+                <a href="{{ route('directorio') }}" class="py-2">Directorio médico</a>
                 <a href="/#nosotros" x-on:click="menuMovil = false" class="py-2">Nosotros</a>
                 <a href="/#contacto" x-on:click="menuMovil = false" class="py-2">Contacto</a>
                 @auth
@@ -106,7 +106,7 @@
                     <li><a href="/login" class="hover:text-white">Iniciar sesión</a></li>
                     <li><a href="{{ route('registro') }}" class="hover:text-white">Crear una cuenta</a></li>
                     <li><a href="/#especialidades" class="hover:text-white">Especialidades</a></li>
-                    <li><a href="/#staff" class="hover:text-white">Staff médico</a></li>
+                    <li><a href="{{ route('directorio') }}" class="hover:text-white">Directorio médico</a></li>
                 </ul>
             </div>
         </div>

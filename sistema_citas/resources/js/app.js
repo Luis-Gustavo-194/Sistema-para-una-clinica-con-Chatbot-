@@ -10,12 +10,14 @@ import collapse from '@alpinejs/collapse';
 import { chatbot } from './chatbot';
 import { carrusel } from './carrusel';
 import { registrarConfirmaciones } from './confirmar';
+import { validacionEnLinea } from './validacion';
 
 Alpine.plugin(focus);
 Alpine.plugin(collapse);
 
 Alpine.data('chatbot', chatbot);
 Alpine.data('carrusel', carrusel);
+Alpine.data('validacionEnLinea', validacionEnLinea);
 registrarConfirmaciones(Alpine);
 
 window.Alpine = Alpine;

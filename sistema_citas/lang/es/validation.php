@@ -3,6 +3,7 @@
 // Mensajes de validación en español (solo las reglas que usa el sistema).
 // Las reglas que no estén aquí usan el mensaje en inglés de Laravel.
 return [
+    'accepted' => 'Debes aceptar el :attribute.',
     'after' => 'El campo :attribute debe ser posterior a :date.',
     'after_or_equal' => 'El campo :attribute debe ser igual o posterior a :date.',
     'before' => 'El campo :attribute debe ser anterior a :date.',
@@ -59,5 +60,8 @@ return [
         'nombre' => 'nombre',
         'nombres' => 'nombres',
         'paciente_id' => 'paciente',
+        'consentimiento' => 'tratamiento de tus datos personales (Ley N.° 29733)',
+        'rol_id' => 'rol',
+        'seguro' => 'seguro',
     ],
 ];
