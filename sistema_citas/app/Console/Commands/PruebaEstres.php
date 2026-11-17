@@ -145,12 +145,12 @@ class PruebaEstres extends Command
         }
 
         // Chatbot sin sesión iniciada: se identifica con el DNI
-        $mensajes = [1 => 'quiero sacar una cita médica', 2 => $p['dni'], 3 => $datos['especialidad_nombre'], 4 => (string) $datos['medico'], 5 => $sesion['opcion'] ?? '1'];
+        $mensajes = [1 => 'quiero sacar una cita médica', 2 => $p['dni'], 3 => $datos['especialidad_nombre'], 4 => (string) $datos['medico'], 5 => $sesion['opcion'] ?? '1', 6 => 'confirmar'];
         if ($sesion['paso'] === 0) {
             $http->get('/');
         } else {
             $http->withHeaders(['X-CSRF-TOKEN' => $sesion['token'], 'Accept' => 'application/json'])
-                ->post('/chatbot/enviar', ['mensaje' => $mensajes[min($sesion['paso'], 5)]]);
+                ->post('/chatbot/enviar', ['mensaje' => $mensajes[min($sesion['paso'], 6)]]);
         }
     }
 
@@ -228,18 +228,35 @@ class PruebaEstres extends Command
 
     private function avanzarChat(array $sesion, Response $respuesta): array
     {
-        if ($sesion['paso'] === 5) {
-            $texto = (string) $respuesta->json('respuesta');
-            if (str_contains($texto, 'exitosamente')) {
-                $sesion['resultado'] = $sesion['reintento'] ? 'ok tras conflicto' : 'ok';
-            } elseif (str_contains($texto, 'No se pudo guardar') && ! $sesion['reintento'] && $respuesta->json('opciones')) {
-                // Conflicto: el chatbot ofrece alternativas y se elige una al azar
-                $sesion['reintento'] = true;
-                $alternativas = array_column($respuesta->json('opciones'), 'valor');
-                $sesion['opcion'] = (string) $alternativas[array_rand($alternativas)];
-            } else {
+        $texto = (string) $respuesta->json('respuesta');
+
+        // El conflicto puede aparecer al elegir el horario (ya lo tomaron) o al confirmar (lo tomaron mientras tanto):
+        // el chatbot ofrece alternativas, se elige una al azar y se vuelve a elegir y confirmar una sola vez
+        if (in_array($sesion['paso'], [5, 6], true)
+            && (str_contains($texto, 'ya no está disponible') || str_contains($texto, 'No se pudo guardar'))) {
+            if ($sesion['reintento'] || ! $respuesta->json('opciones')) {
                 $sesion['resultado'] = 'conflicto';
+
+                return $sesion;
             }
+            $sesion['reintento'] = true;
+            $alternativas = array_column($respuesta->json('opciones'), 'valor');
+            $sesion['opcion'] = (string) $alternativas[array_rand($alternativas)];
+            $sesion['paso'] = 5;
+
+            return $sesion;
+        }
+
+        if ($sesion['paso'] === 5 && ! str_contains($texto, 'Revisa los datos')) {
+            $sesion['resultado'] = 'error: no se mostró el resumen';
+
+            return $sesion;
+        }
+
+        if ($sesion['paso'] === 6) {
+            $sesion['resultado'] = str_contains($texto, 'exitosamente')
+                ? ($sesion['reintento'] ? 'ok tras conflicto' : 'ok')
+                : 'conflicto';
 
             return $sesion;
         }
@@ -263,7 +280,7 @@ class PruebaEstres extends Command
     {
         $pasos = $sesion['canal'] === 'web'
             ? ['ver login', 'iniciar sesión', 'ver horarios', 'reservar']
-            : ['abrir portada', 'pedir cita', 'enviar DNI', 'elegir especialidad', 'elegir médico', 'reservar'];
+            : ['abrir portada', 'pedir cita', 'enviar DNI', 'elegir especialidad', 'elegir médico', 'elegir horario', 'confirmar'];
 
         return $pasos[$sesion['paso']] ?? 'paso '.$sesion['paso'];
     }

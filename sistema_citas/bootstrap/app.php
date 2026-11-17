@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\VerificarRol;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,8 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Railway (y cualquier hosting con proxy) termina el HTTPS antes de llegar a Laravel:
+        // así las URLs salen con https:// y request()->ip() es la del visitante, no la del proxy
+        $middleware->trustProxies(at: '*');
+
         $middleware->alias([
-            'rol' => \App\Http\Middleware\VerificarRol::class,
+            'rol' => VerificarRol::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

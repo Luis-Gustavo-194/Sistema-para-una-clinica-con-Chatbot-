@@ -3,10 +3,12 @@ from pydantic import BaseModel
 import pickle
 from preprocesamiento import limpiar_texto
 
-# Puntaje mínimo (margen de LinearSVC) para aceptar una intención.
-# Medido con frases nuevas: las bien clasificadas quedan por encima de 0
-# y las mal clasificadas por debajo, así que es mejor pedir que reformule.
-UMBRAL_CONFIANZA = 0.0
+# El umbral de confianza ya no vive aquí: Laravel (config/chatbot.php) decide con el puntaje
+# si acepta la intención, pregunta "¿Quisiste decir…?" con las candidatas o no la entiende.
+# Referencia medida con frases nuevas: las bien clasificadas quedan por encima de 0.
+
+# Cuántas intenciones probables se devuelven para la aclaración
+CANTIDAD_CANDIDATAS = 3
 
 # 1. Inicializamos la API
 app = FastAPI(title="Motor NLP - Citas Médicas")
@@ -24,6 +26,11 @@ print("¡Modelos cargados correctamente!")
 class MensajeUsuario(BaseModel):
     texto: str
 
+# Comprobación de que el servicio está arriba (healthcheck de Railway)
+@app.get("/salud")
+def salud():
+    return {"estado": "ok"}
+
 # 4. Creamos el Endpoint (La puerta de entrada para Laravel)
 @app.post("/predecir")
 def predecir_intencion(mensaje: MensajeUsuario):
@@ -33,7 +40,7 @@ def predecir_intencion(mensaje: MensajeUsuario):
 
     # Manejo de fallback (si el usuario escribe cosas sin sentido)
     if not frase_procesada:
-        return {"texto_original": mensaje.texto, "intencion": "desconocida", "confianza": 0.0}
+        return {"texto_original": mensaje.texto, "intencion": "desconocida", "confianza": 0.0, "candidatas": []}
 
     # Convertimos a números
     vector = vectorizador.transform([frase_procesada])
@@ -41,21 +48,20 @@ def predecir_intencion(mensaje: MensajeUsuario):
     # Si ninguna palabra existe en el vocabulario, el vector queda vacío y el
     # modelo devolvería siempre la misma clase ("saludo"): lo tratamos como desconocido
     if vector.nnz == 0:
-        return {"texto_original": mensaje.texto, "intencion": "desconocida", "confianza": 0.0}
+        return {"texto_original": mensaje.texto, "intencion": "desconocida", "confianza": 0.0, "candidatas": []}
 
-    # Predecimos y medimos qué tan seguro está el modelo
+    # Puntaje de cada intención, de mayor a menor: la primera es la predicha
     puntajes = modelo.decision_function(vector)[0]
-    indice = puntajes.argmax()
-    confianza = float(puntajes[indice])
-
-    if confianza < UMBRAL_CONFIANZA:
-        intencion_predicha = "desconocida"
-    else:
-        intencion_predicha = str(modelo.classes_[indice])
+    orden = puntajes.argsort()[::-1][:CANTIDAD_CANDIDATAS]
+    candidatas = [
+        {"intencion": str(modelo.classes_[i]), "puntaje": round(float(puntajes[i]), 3)}
+        for i in orden
+    ]
 
     # FastAPI convierte automáticamente este diccionario en formato JSON para Laravel
     return {
         "texto_original": mensaje.texto,
-        "intencion": intencion_predicha,
-        "confianza": round(confianza, 3)
+        "intencion": candidatas[0]["intencion"],
+        "confianza": candidatas[0]["puntaje"],
+        "candidatas": candidatas,
     }

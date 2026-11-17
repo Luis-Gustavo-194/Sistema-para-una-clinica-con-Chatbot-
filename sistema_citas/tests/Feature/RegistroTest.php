@@ -103,7 +103,11 @@ class RegistroTest extends TestCase
             ->assertSee('Ley N.° 29733')
             ->assertSee(route('politica-privacidad'));
 
-        $this->get('/politica-de-privacidad')->assertOk()->assertSee('Ley N.° 29733');
+        // Google exige que la política explique el uso de la API de Gmail para publicar la app
+        $this->get('/politica-de-privacidad')->assertOk()
+            ->assertSee('Ley N.° 29733')
+            ->assertSee('API de Gmail')
+            ->assertSee('gmail.send');
     }
 
     public function test_usuario_con_sesion_va_a_su_panel(): void

@@ -52,7 +52,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/restablecer-contrasena', [PasswordController::class, 'restablecer'])->middleware('throttle:5,1')->name('password.update');
 });
 
-Route::post('/chatbot/enviar', [ChatbotController::class, 'procesarMensaje']);
+// Asistente virtual (HU08/HU09): límite de mensajes por sesión y por IP en AppServiceProvider
+Route::post('/chatbot/enviar', [ChatbotController::class, 'procesarMensaje'])
+    ->middleware('throttle:chatbot')
+    ->name('chatbot.enviar');
 
 // ==========================================
 // PANEL DEL MÉDICO (Protegido: solo rol Médico)

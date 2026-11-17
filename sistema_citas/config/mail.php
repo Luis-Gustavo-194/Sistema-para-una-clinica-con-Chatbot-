@@ -65,6 +65,11 @@ return [
             'transport' => 'resend',
         ],
 
+        // API HTTPS de Gmail; el transporte (App\Mail\GmailApiTransport) se registra en AppServiceProvider
+        'gmail' => [
+            'transport' => 'gmail',
+        ],
+
         'sendmail' => [
             'transport' => 'sendmail',
             'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
@@ -79,10 +84,11 @@ return [
             'transport' => 'array',
         ],
 
+        // Producción (Railway): Gmail y, si falla, el correo queda en storage/logs sin romper la página
         'failover' => [
             'transport' => 'failover',
             'mailers' => [
-                'smtp',
+                'gmail',
                 'log',
             ],
             'retry_after' => 60,

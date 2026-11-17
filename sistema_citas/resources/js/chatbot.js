@@ -12,7 +12,9 @@ export function chatbot(saludo) {
         abierto: false,
         texto: '',
         enviando: false,
-        mensajes: [{ autor: 'bot', texto: saludo, opciones: [] }],
+        // true mientras hay un flujo en curso (agendar, cancelar...): muestra los atajos Atrás / Cancelar
+        enProceso: false,
+        mensajes: [{ autor: 'bot', texto: saludo, opciones: [], enlace: null }],
 
         alternar() {
             this.abierto ? this.cerrar() : this.abrir();
@@ -32,7 +34,7 @@ export function chatbot(saludo) {
             const visible = (textoVisible ?? this.texto).trim();
             if (visible === '' || this.enviando) return;
 
-            this.mensajes.push({ autor: 'usuario', texto: visible, opciones: [] });
+            this.mensajes.push({ autor: 'usuario', texto: visible, opciones: [], enlace: null });
             this.texto = '';
             this.enviando = true;
             this.bajar();
@@ -49,17 +51,25 @@ export function chatbot(saludo) {
                 });
                 const datos = await respuesta.json();
 
-                this.mensajes.push(
-                    respuesta.ok
-                        ? { autor: 'bot', texto: datos.respuesta, opciones: datos.opciones ?? [] }
-                        : { autor: 'bot', texto: 'Error de conexión con el servidor.', opciones: [] },
-                );
+                if (respuesta.ok) {
+                    this.enProceso = Boolean(datos.en_proceso);
+                    this.responder(datos.respuesta, datos.opciones ?? [], datos.enlace ?? null);
+                } else if (respuesta.status === 429) {
+                    this.responder('Estás enviando mensajes muy rápido. Espera un momento y vuelve a intentarlo.');
+                } else {
+                    this.responder('Error de conexión con el servidor.');
+                }
             } catch {
-                this.mensajes.push({ autor: 'bot', texto: 'El motor NLP está desconectado.', opciones: [] });
+                this.responder('No pude comunicarme con el servidor. Revisa tu conexión e inténtalo de nuevo.');
             } finally {
                 this.enviando = false;
                 this.bajar();
+                this.$nextTick(() => this.$refs.entrada?.focus());
             }
+        },
+
+        responder(texto, opciones = [], enlace = null) {
+            this.mensajes.push({ autor: 'bot', texto, opciones, enlace });
         },
 
         bajar() {

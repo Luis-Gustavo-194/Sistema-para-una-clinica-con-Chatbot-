@@ -36,6 +36,32 @@
     overflow-wrap: anywhere;
 }
 
+/* Indicador "escribiendo": tres puntos que suben y bajan de forma escalonada */
+.chat-punto {
+    animation: chat-punto 1.2s ease-in-out infinite;
+}
+.chat-punto:nth-child(2) {
+    animation-delay: 0.15s;
+}
+.chat-punto:nth-child(3) {
+    animation-delay: 0.3s;
+}
+@keyframes chat-punto {
+    0%, 60%, 100% {
+        opacity: 0.35;
+        transform: translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: translateY(-3px);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .chat-punto {
+        animation: none;
+    }
+}
+
 /* Carrusel de convenios: desplazamiento horizontal suave sin barra visible */
 .carril-horizontal {
     scroll-snap-type: x mandatory;

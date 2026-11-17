@@ -3,3 +3,5 @@ uvicorn==0.54.0
 pydantic==2.14.1
 scikit-learn==1.9.1
 spacy==3.8.16
+# Modelo de español de spaCy (preprocesamiento.py); se instala desde su release oficial
+es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl

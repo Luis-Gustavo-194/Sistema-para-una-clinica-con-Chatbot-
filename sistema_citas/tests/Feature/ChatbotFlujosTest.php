@@ -97,6 +97,9 @@ class ChatbotFlujosTest extends TestCase
         $r = $this->agendar('11111111');
         $this->assertSame(['10:00 AM', '11:30 AM'], array_column($r['opciones'], 'texto'));
         $r = $this->enviar('1');
+        $this->assertStringContainsString('Revisa los datos de tu cita', $r['respuesta']); // resumen antes de guardar
+        $this->assertSame(0, Cita::count());
+        $r = $this->enviar('confirmar');
         $this->assertStringContainsString('agendada exitosamente', $r['respuesta']);
         $this->assertDatabaseHas('citas', ['paciente_id' => 1, 'medico_id' => 1, 'fecha' => $this->manana, 'hora_inicio' => '10:00:00', 'estado' => 'Pendiente']);
         // HU11/HU18: sin sesión, el autor es el usuario del paciente identificado por DNI y el canal es el chatbot
@@ -179,7 +182,8 @@ class ChatbotFlujosTest extends TestCase
         $this->enviar('Cardiología');
         $r = $this->enviar('1');
         $this->assertSame(['11:30 AM'], array_column($r['opciones'], 'texto')); // 10:00 ocupada
-        $r = $this->enviar('1');
+        $this->enviar('1');
+        $r = $this->enviar('confirmar');
         $this->assertStringContainsString('REPROGRAMADA', $r['respuesta']);
         $mia->refresh();
         $this->assertSame(1, $mia->medico_id);
@@ -193,8 +197,9 @@ class ChatbotFlujosTest extends TestCase
         $this->agendar('11111111'); // ofrece 1 y 2
         // Mientras elige, otro paciente toma las 10:00
         Cita::create(['paciente_id' => 2, 'medico_id' => 1, 'fecha' => $this->manana, 'hora_inicio' => '10:00:00', 'hora_fin' => '10:30:00', 'estado' => 'Pendiente']);
+        // Al elegirlo ya se comprueba que siga libre, antes del resumen
         $r = $this->enviar('1');
-        $this->assertStringContainsString('No se pudo guardar', $r['respuesta']);
+        $this->assertStringContainsString('ya no está disponible', $r['respuesta']);
         $this->assertStringContainsString('horarios libres más cercanos', $r['respuesta']);
 
         // Los 3 turnos libres más cercanos a las 10:00 de mañana, aunque sean de otro día
@@ -206,7 +211,8 @@ class ChatbotFlujosTest extends TestCase
         ], array_column($r['opciones'], 'texto'));
 
         // Elegir una alternativa de otro día reserva esa fecha
-        $r = $this->enviar('2');
+        $this->enviar('2');
+        $r = $this->enviar('confirmar');
         $this->assertStringContainsString('agendada exitosamente', $r['respuesta']);
         $this->assertDatabaseHas('citas', ['paciente_id' => 1, 'fecha' => $pasado, 'hora_inicio' => '10:00:00', 'canal' => 'chatbot']);
     }
@@ -316,7 +322,8 @@ class ChatbotFlujosTest extends TestCase
         $this->assertSame(['Cardiología', 'Pediatría'], array_column($r['opciones'], 'valor'));
         $this->enviar('Cardiología');
         $this->enviar('1');
-        $r = $this->enviar('1');
+        $this->enviar('1');
+        $r = $this->enviar('confirmar');
         $this->assertStringContainsString('agendada exitosamente', $r['respuesta']);
         $cita = Cita::first();
         $this->assertSame(1, (int) $cita->paciente_id);

@@ -28,6 +28,11 @@
             <h2 class="text-base font-semibold text-on-surface-strong">5. Tus derechos (ARCO)</h2>
             <p class="mt-1">Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus datos escribiendo a {{ config('clinica.correo') }} o acudiendo a recepción con tu DNI.</p>
         </section>
+        <section>
+            <h2 class="text-base font-semibold text-on-surface-strong">6. Correos electrónicos y servicios de Google</h2>
+            <p class="mt-1">Usamos la API de Gmail de Google únicamente para <strong>enviar</strong> correos del propio sistema: enlaces para crear o restablecer tu contraseña y confirmaciones de citas. La aplicación solo solicita el permiso <code>gmail.send</code>: no lee, guarda ni comparte el contenido de ningún buzón de Gmail.</p>
+            <p class="mt-1">El uso de la información recibida de las API de Google cumple la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener" class="font-semibold text-primary underline-offset-4 hover:underline">Política de datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de uso limitado. Para cualquier consulta escríbenos a {{ config('clinica.correo') }}.</p>
+        </section>
     </div>
 
     <a href="{{ url()->previous() !== url()->current() ? url()->previous() : route('registro') }}" class="mt-8 inline-flex items-center gap-1 text-sm text-on-surface hover:text-primary">

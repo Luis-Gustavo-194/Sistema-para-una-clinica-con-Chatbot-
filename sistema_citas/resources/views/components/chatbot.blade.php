@@ -42,13 +42,35 @@
                                         class="rounded-full border border-primary/30 bg-lavanda px-3 py-1 text-xs font-semibold text-primary transition hover:bg-primary hover:text-on-primary"></button>
                             </template>
                         </div>
+                        {{-- Enlace sugerido por el asistente (p. ej. registro de pacientes, HU02) --}}
+                        <template x-if="mensaje.enlace">
+                            <a :href="mensaje.enlace.url" x-text="mensaje.enlace.texto" target="_blank" rel="noopener"
+                               class="mt-3 inline-flex items-center rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-on-primary transition hover:bg-primary-hover"></a>
+                        </template>
                     </div>
                 </div>
             </template>
-            <p x-show="enviando" class="text-xs text-on-surface">El asistente está escribiendo…</p>
+
+            {{-- HU08: indicador "escribiendo" mientras llega la respuesta --}}
+            <div x-cloak x-show="enviando" class="flex justify-start">
+                <div class="flex items-center gap-1 rounded-2xl rounded-bl-sm bg-surface px-4 py-3 ring-1 ring-outline" role="status" aria-label="El asistente está escribiendo">
+                    <span class="chat-punto size-2 rounded-full bg-on-surface"></span>
+                    <span class="chat-punto size-2 rounded-full bg-on-surface"></span>
+                    <span class="chat-punto size-2 rounded-full bg-on-surface"></span>
+                </div>
+            </div>
         </div>
 
-        <form x-on:submit.prevent="enviar()" class="flex items-center gap-2 border-t border-outline bg-surface p-3">
+        {{-- Atajos mientras hay un trámite en curso: corregir el último dato o cancelar --}}
+        <div x-cloak x-show="enProceso" class="flex gap-2 border-t border-outline bg-surface px-3 pt-2">
+            <button type="button" x-on:click="enviar('↩ Atrás', 'atras')" x-bind:disabled="enviando"
+                    class="rounded-full border border-outline px-3 py-1 text-xs font-semibold text-on-surface transition hover:border-primary hover:text-primary disabled:opacity-50">↩ Atrás</button>
+            <button type="button" x-on:click="enviar('✖ Cancelar', 'cancelar')" x-bind:disabled="enviando"
+                    class="rounded-full border border-outline px-3 py-1 text-xs font-semibold text-on-surface transition hover:border-primary hover:text-primary disabled:opacity-50">✖ Cancelar</button>
+        </div>
+
+        {{-- HU08: Enter envía el mensaje (submit del formulario) --}}
+        <form x-on:submit.prevent="enviar()" class="flex items-center gap-2 bg-surface p-3" x-bind:class="enProceso ? '' : 'border-t border-outline'">
             <input x-ref="entrada" x-model="texto" type="text" placeholder="{{ $placeholder }}" aria-label="Mensaje para el asistente" autocomplete="off"
                    class="min-w-0 flex-1 rounded-full border border-outline bg-surface-alt px-4 py-2 text-sm text-on-surface-strong focus-visible:outline-2 focus-visible:outline-primary">
             <button type="submit" class="flex size-10 items-center justify-center rounded-full bg-primary text-on-primary hover:bg-primary-hover disabled:opacity-50" x-bind:disabled="enviando" aria-label="Enviar mensaje">
